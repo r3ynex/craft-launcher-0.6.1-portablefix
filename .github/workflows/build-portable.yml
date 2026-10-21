@@ -1,0 +1,35 @@
+
+name: Build Windows Portable
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Build launcher
+        run: cargo build --release --locked --target x86_64-pc-windows-msvc
+
+      - name: Package portable launcher
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/portable | Out-Null
+          Copy-Item target/x86_64-pc-windows-msvc/release/artcraft-launcher.exe dist/portable/
+          New-Item -ItemType File -Force -Path dist/portable/portable.txt | Out-Null
+          Compress-Archive -Path dist/portable/* -DestinationPath dist/artcraft-launcher-windows-x64-portable.zip
+
+      - name: Upload portable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: artcraft-launcher-windows-x64-portable
+          path: dist/artcraft-launcher-windows-x64-portable.zip
